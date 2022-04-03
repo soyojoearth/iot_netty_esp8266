@@ -24,7 +24,7 @@
 
 效果图：
 
-![readme](D:\iot_netty_esp8266\iot_netty_esp8266\readme.png)
+![readme](readme.png)
 
 
 
