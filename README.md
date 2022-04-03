@@ -22,6 +22,10 @@
 
 ​		3、浏览器输入 http://<电脑局域网IP地址>:8080/set/led ，就可以控制设备LED灯的开关了。
 
+演示视频：
+
+https://youtube.com/shorts/TMbjdpVQZuE?feature=share
+
 效果图：
 
 ![readme](readme.png)
