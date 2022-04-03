@@ -24,9 +24,8 @@
 
 效果图：
 
-<img src="image\led_off.png" alt="led_off" style="zoom:50%;" />
+![readme](D:\iot_netty_esp8266\iot_netty_esp8266\readme.png)
 
-<img src="image\led_on.png" alt="led_on" style="zoom:50%;" />
 
-<img src="image\screen.png" alt="screen" style="zoom:50%;" />
 
+这个板子，网上随便买，价格20多块。
