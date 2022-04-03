@@ -1,4 +1,4 @@
-# 简单的Iot服务器程序(Netty)和ESP8266程序(Arduino)，可以控制一个LED灯。
+# 简单的Iot服务器程序(Netty)和ESP8266程序(Arduino)，可以用手机通过WiFi控制一个LED灯。
 
 
 
