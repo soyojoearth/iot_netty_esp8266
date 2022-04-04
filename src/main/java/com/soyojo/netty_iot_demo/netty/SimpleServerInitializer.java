@@ -14,12 +14,8 @@ import io.netty.handler.codec.string.StringEncoder;
  */
 public class SimpleServerInitializer extends ChannelInitializer<SocketChannel> {
 
-    public static SimpleServerHandler handler;
-
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
-
-        handler = new SimpleServerHandler();
 
         ChannelPipeline pipeline = ch.pipeline();
         pipeline.addLast("framer",new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
@@ -31,7 +27,7 @@ public class SimpleServerInitializer extends ChannelInitializer<SocketChannel> {
 
         //不要自己编写什么特别协议解析了，还不如直接用字符串，按json解析，方便多了!
 
-        pipeline.addLast("handle",handler);
+        pipeline.addLast("handle",new SimpleServerHandler());
 
         System.out.println("Client"+ch.remoteAddress()+"连上服务器");
 
