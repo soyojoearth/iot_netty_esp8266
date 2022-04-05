@@ -1,5 +1,6 @@
 package com.soyojo.netty_iot_demo.netty;
 
+import com.soyojo.netty_iot_demo.acl.IotAcl;
 import com.soyojo.netty_iot_demo.bean.IotDevice;
 import com.soyojo.netty_iot_demo.bean.IotMessageEntity;
 import com.google.gson.Gson;
@@ -70,70 +71,65 @@ public class SimpleServerHandler extends SimpleChannelInboundHandler<String> {
 
     }
 
-
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, String s) {
         System.out.println(s);
 
         Channel channel  = channelHandlerContext.channel();
 
-        //处理心跳
+
         if (s.equals("ping")){
-            //查找deviceMap
-            if (deviceMap.containsKey(channel.remoteAddress().toString())){
-                channel.writeAndFlush("pong\n");
-                System.out.println("ping pong");
-            }
-            else {
-                //询问
-                channel.writeAndFlush("who\n");
-                System.out.println("who...when ping");
-            }
+            //处理心跳（不需要验证身份就可以维持心跳）
+            channel.writeAndFlush("pong\n");
+            System.out.println("ping: "+channel.remoteAddress());
         }
         else {
             //当作Json解析数据，更新数据
             Gson gson = new Gson();
             IotMessageEntity iotMessageEntity = gson.fromJson(s, IotMessageEntity.class);
-            if (iotMessageEntity.type.equals("who"))
+            if (iotMessageEntity.type.equals("login"))
             {
-                //更新deviceMap
+
                 IotDevice iotDevice = new IotDevice();
                 iotDevice.productKey = iotMessageEntity.productKey;
                 iotDevice.deviceId = iotMessageEntity.deviceId;
                 iotDevice.deviceSecret = iotMessageEntity.deviceSecret;
-                deviceMap.put(channel.remoteAddress().toString(),iotDevice);
-                System.out.println("update who");
-                deviceSocketForSendMessage.put(iotDevice.deviceId,channel.remoteAddress().toString());
+
+                //校验设备合法性
+                //....
+                if(new IotAcl().verifyDevice(iotDevice))
+                {
+                    //校验通过后，更新deviceMap
+                    deviceMap.put(channel.remoteAddress().toString(),iotDevice);
+                    deviceSocketForSendMessage.put(iotDevice.deviceId,channel.remoteAddress().toString());
+                    //告知已通过验证
+                    channel.writeAndFlush("loginSuccess\n");
+                    System.out.println("loginSuccess");
+                }
+                else {
+                    //校验没通过
+                    channel.writeAndFlush("loginFail\n");
+                    System.out.println("loginFail");
+                }
+
             }
-            else if (iotMessageEntity.type.equals("dp")){
+            else if (iotMessageEntity.type.equals("update")){
                 if (deviceMap.containsKey(channel.remoteAddress().toString())) {
-                    IotDevice iotDeviceOld = deviceMap.get(channel.remoteAddress().toString());
-                    if (!iotDeviceOld.productKey.equals(iotMessageEntity.productKey) ||
-                            !iotDeviceOld.deviceId.equals(iotMessageEntity.deviceId) ||
-                            !iotDeviceOld.deviceSecret.equals(iotMessageEntity.deviceSecret))
-                    {
-                        //直接更新相关Map
-                        IotDevice device = new IotDevice();
-                        device.productKey = iotMessageEntity.productKey;
-                        device.deviceId = iotMessageEntity.deviceId;
-                        device.deviceSecret = iotMessageEntity.deviceSecret;
-                        deviceMap.put(channel.remoteAddress().toString(),device);
-                        activeMap.put(channel.remoteAddress().toString(),true);
-                        channelMap.put(channel.remoteAddress().toString(),channel);
-                        System.out.println("update device map");
-                        deviceSocketForSendMessage.put(device.deviceId,channel.remoteAddress().toString());
-                    }
+                    IotDevice iotDevice = deviceMap.get(channel.remoteAddress().toString());
 
                     //更新其它传感器数据等，或者发到消息队列，让别的服务器处理（此处省略，自行按需编写）
                     //...
+
+
                     System.out.println("update dp");
-                    deviceStatusMap.put(iotDeviceOld.deviceId,s);
+                    deviceStatusMap.put(iotDevice.deviceId,s);
 
                 }
                 else {
-                    //询问
-                    channel.writeAndFlush("who\n");
-                    System.out.println("who...when update");
+                    //未登录，则禁止访问
+                    channel.writeAndFlush("AccessDenied\n");
+                    //channel.close();
+                    System.out.println("AccessDenied");
                 }
             }
 
@@ -150,6 +146,9 @@ public class SimpleServerHandler extends SimpleChannelInboundHandler<String> {
         Channel incoming = ctx.channel();
         activeMap.put(incoming.remoteAddress().toString(),true);
         System.out.println("Client:"+incoming.remoteAddress()+"在线");
+        //询问认证
+        ctx.channel().writeAndFlush("who\n");
+        System.out.println("Client:" + ctx.channel().remoteAddress()+" who active");
     }
 
 

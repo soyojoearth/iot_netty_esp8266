@@ -83,11 +83,6 @@ void loop()
             Serial.println("connection....");
             delay(500);
         }
-        else
-        {
-            answerWho();
-            updateData();
-        }
     }
     else
     {
@@ -101,17 +96,32 @@ void loop()
               Serial.println("LED OFF");
               updateData();//更新数据到服务器
           }
-          if(content.equals("ON"))
+          else if(content.equals("ON"))
           {
               power = 1;//开
               digitalWrite(led, LOW);
               Serial.println("LED ON");
               updateData();//更新数据到服务器
           }
-          if(content.equals("who"))//回答服务器
-          {          
+
+
+          if(content.equals("who"))//需要登录验证
+          {
               answerWho();
           }
+          else if(content.equals("loginSuccess"))//验证通过（已登录）
+          {
+              updateData();//更新数据到服务器
+          }
+          else if(content.equals("loginFail"))//验证不通过（登陆失败）
+          {
+              Serial.println("loginFail\n");
+          }
+          else if(content.equals("AccessDenied"))//访问禁止（未登录）
+          {
+              Serial.println("access denied\n");
+          }
+
         }
     }
 }
@@ -126,7 +136,7 @@ void heartbeat(){
 }
 
 void answerWho(){
-        String msg = "{\"type\":\"who\",\"productKey\":\""+String(productKey)+"\",\"deviceId\":\""+String(deviceId)+"\",\"deviceSecret\":\""+String(deviceSecret)+"\"}";
+        String msg = "{\"type\":\"login\",\"productKey\":\""+String(productKey)+"\",\"deviceId\":\""+String(deviceId)+"\",\"deviceSecret\":\""+String(deviceSecret)+"\"}";
         int len = msg.length()+1;
         char buf[len];
         msg.toCharArray(buf,len);
@@ -139,7 +149,10 @@ void updateData(){
     {
         Serial.println("updateData");
         //更新数据到服务器
-        String msg = "{\"type\":\"dp\",\"productKey\":\""+String(productKey)+"\",\"deviceId\":\""+String(deviceId)+"\",\"deviceSecret\":\""+String(deviceSecret)+"\",\"power\":"+power+"}";
+        String msg = "{\"type\":\"update\",\"power\":0}";
+        if(power){
+            msg = "{\"type\":\"update\",\"power\":1}";
+        }
         int len = msg.length()+1;
         char buf[len];
         msg.toCharArray(buf,len);
